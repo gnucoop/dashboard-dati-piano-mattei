@@ -24,7 +24,7 @@ from pathlib import Path
 BASE = Path(__file__).parent
 DATA_JSON_PATH = BASE / "dati_progetti_mattei.json"
 CSV_OUT_PATH = BASE / "progetti_piano_mattei_aggiornato.csv"
-HTML_OUT_PATH = BASE / "dashboard_piano_mattei.html"
+HTML_OUT_PATH = BASE / "index.html"
 
 
 # ---------------------------------------------------------------- helpers --
