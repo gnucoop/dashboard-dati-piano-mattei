@@ -35,7 +35,7 @@ jobs:
 
       - name: Esegui lo script per generare l'HTML
         run: |
-          python main.py # <-- SOSTITUISCI con il nome esatto del tuo script Python
+          python estrai_dati_mattei.py  # <-- SOSTITUISCI con il nome esatto del tuo script Python
 
       - name: Carica artefatto per GitHub Pages
         uses: actions/upload-pages-artifact@v3
