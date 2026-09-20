@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piano Mattei — Dashboard progetti</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --muted:          #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --border-strong:  rgba(11,11,11,0.16);
+
+    --slot-1: #2a78d6; /* blue */
+    --slot-2: #eb6834; /* orange */
+    --slot-3: #1baf7a; /* aqua */
+    --slot-4: #eda100; /* yellow */
+    --slot-5: #e87ba4; /* magenta */
+    --slot-6: #008300; /* green */
+    --slot-7: #4a3aa7; /* violet */
+    --slot-8: #e34948; /* red */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted:          #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --border-strong:  rgba(255,255,255,0.16);
+
+      --slot-1: #3987e5;
+      --slot-2: #d95926;
+      --slot-3: #199e70;
+      --slot-4: #c98500;
+      --slot-5: #d55181;
+      --slot-6: #008300;
+      --slot-7: #9085e9;
+      --slot-8: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted:          #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --border-strong:  rgba(255,255,255,0.16);
+
+    --slot-1: #3987e5;
+    --slot-2: #d95926;
+    --slot-3: #199e70;
+    --slot-4: #c98500;
+    --slot-5: #d55181;
+    --slot-6: #008300;
+    --slot-7: #9085e9;
+    --slot-8: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  body { padding: 0 0 48px 0; }
+
+  header.top {
+    padding: 28px 24px 20px;
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  header.top h1 {
+    font-size: 1.5rem;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.01em;
+  }
+  header.top p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    max-width: 640px;
+    line-height: 1.5;
+  }
+  header.top .source-note {
+    color: var(--muted);
+    font-size: 0.76rem;
+    margin-top: 6px;
+  }
+  .top-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  button.btn {
+    border: 1px solid var(--border-strong);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  button.btn:hover { border-color: var(--muted); }
+  button.btn.primary {
+    background: var(--slot-1);
+    border-color: var(--slot-1);
+    color: #ffffff;
+  }
+  button.btn.primary:hover { opacity: 0.9; }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+  section.block { margin-top: 36px; }
+  section.block h2 {
+    font-size: 1.05rem;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.005em;
+  }
+  section.block .sub {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin: 0 0 16px 0;
+    max-width: 760px;
+    line-height: 1.5;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .stat-tile {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .stat-tile .value {
+    font-size: 1.9rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .stat-tile .label {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    margin-top: 6px;
+  }
+  .stat-tile .note {
+    color: var(--muted);
+    font-size: 0.74rem;
+    margin-top: 4px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .grid.thirds { grid-template-columns: repeat(3, 1fr); }
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card.wide { grid-column: 1 / -1; }
+  .card h3 {
+    font-size: 0.92rem;
+    margin: 0 0 2px 0;
+    font-weight: 600;
+  }
+  .card .chart-note {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+  }
+  .card .chart-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 260px;
+  }
+  .card .chart-wrap.tall { min-height: 380px; }
+  .card .chart-wrap.short { min-height: 200px; }
+
+  .callout {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+  .callout b { font-weight: 600; }
+  .callout .big {
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  table.list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+  }
+  table.list-table th, table.list-table td {
+    text-align: left;
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--grid);
+  }
+  table.list-table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  table.list-table td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .filter-bar .filter-label {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    margin-right: 2px;
+  }
+  .filter-dropdown { position: relative; }
+  .filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .filter-toggle .badge {
+    background: var(--slot-1);
+    color: #ffffff;
+    border-radius: 9px;
+    padding: 1px 7px;
+    font-size: 0.7rem;
+    line-height: 1.4;
+  }
+  .filter-toggle .chev {
+    color: var(--muted);
+    font-size: 0.7rem;
+  }
+  .filter-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 240px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+    z-index: 60;
+  }
+  .filter-panel[hidden] { display: none; }
+  .filter-panel input[type="search"] {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+    padding: 6px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--page);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-family: inherit;
+  }
+  .filter-panel input[type="search"]:focus { outline: 1px solid var(--slot-1); }
+  .filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 4px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .filter-option:hover { background: var(--page); }
+  .filter-option input { accent-color: var(--slot-1); cursor: pointer; }
+  .filter-option .n {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .filter-option-empty {
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 6px 4px;
+  }
+  .filter-panel-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--grid);
+  }
+  .filter-panel-actions button {
+    background: none;
+    border: none;
+    color: var(--slot-1);
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-family: inherit;
+  }
+  .filter-panel-actions button:hover { text-decoration: underline; }
+  .filter-reset {
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: inherit;
+    padding: 8px 2px;
+  }
+  .filter-reset:disabled {
+    color: var(--muted);
+    cursor: default;
+    text-decoration: none;
+  }
+  .filter-summary {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .filter-summary b { color: var(--text-primary); }
+  .empty-state {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 40px 20px;
+  }
+
+  footer.note {
+    max-width: 1280px;
+    margin: 40px auto 0;
+    padding: 18px 24px 0;
+    border-top: 1px solid var(--grid);
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 980px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid, .grid.thirds { grid-template-columns: 1fr; }
+    header.top { flex-direction: column; }
+    .top-actions { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Piano Mattei per l'Africa — Dashboard progetti</h1>
+    <p>Analisi dei progetti di cooperazione allo sviluppo finanziati dal governo italiano in Africa, a partire dai dati pubblicati su governo.it/piano-mattei/progetti.</p>
+    <p class="source-note">Fonte: <span id="fonteUrl"></span> — dati estratti il <span id="estrattoIl"></span> (direttamente dai dati pubblicati dal sito, non da un file intermedio).</p>
+  </div>
+  <div class="top-actions">
+    <button class="btn primary" id="downloadCsv" type="button">⬇ Scarica dataset (CSV)</button>
+    <button class="theme-toggle btn" id="themeToggle" type="button">Tema: automatico</button>
+  </div>
+</header>
+
+<main>
+
+  <section class="block" style="margin-top:0;">
+    <div class="filter-bar" id="filterBar">
+      <span class="filter-label">Filtra per:</span>
+      <!-- i tre menu (Direttrice, Paese, Stato) vengono generati in JS in #filterBarSlots -->
+      <span id="filterBarSlots" style="display:contents"></span>
+      <button class="filter-reset" id="filterReset" type="button" disabled>Azzera filtri</button>
+      <span class="filter-summary" id="filterSummary"></span>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="stat-grid">
+      <div class="stat-tile">
+        <div class="value" id="statTotProgetti">—</div>
+        <div class="label">Progetti censiti</div>
+        <div class="note" id="statTotProgettiNote"></div>
+      </div>
+      <div class="stat-tile">
+        <div class="value" id="statTotBudget">—</div>
+        <div class="label">Finanziamento complessivo (EUR)</div>
+        <div class="note" id="statTotBudgetNote"></div>
+      </div>
+      <div class="stat-tile">
+        <div class="value" id="statNazioni">—</div>
+        <div class="label">Nazioni africane coinvolte</div>
+        <div class="note">Escluse iniziative pan-africane senza paese specifico</div>
+      </div>
+      <div class="stat-tile">
+        <div class="value" id="statInCorso">—</div>
+        <div class="label">Progetti "In corso"</div>
+        <div class="note" id="statInCorsoNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Quadro generale</h2>
+    <p class="sub">Distribuzione dei progetti per settore di intervento ("direttrice"), stato di avanzamento e tipologia di partenariato.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Progetti per direttrice</h3>
+        <p class="chart-note">Un progetto può coprire più direttrici: la somma dei conteggi supera quindi il totale dei progetti.</p>
+        <div class="chart-wrap tall"><canvas id="chartDirettriceCount"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Finanziamento per direttrice</h3>
+        <p class="chart-note">Importo attribuito alla direttrice principale di ciascun progetto (nessun doppio conteggio). Solo importi in EUR.</p>
+        <div class="chart-wrap tall"><canvas id="chartDirettriceBudget"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Progetti per stato di avanzamento</h3>
+        <div class="chart-wrap"><canvas id="chartStato"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Progetti per tipologia</h3>
+        <p class="chart-note">Bilaterale = 1 paese, Transnazionale = più paesi, Panafricano = intero continente.</p>
+        <div class="chart-wrap"><canvas id="chartTipo"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Distribuzione geografica</h2>
+    <p class="sub">I 15 paesi più coinvolti, per numero di progetti e per finanziamento ricevuto (l'importo dei progetti multi-paese è ripartito in quote uguali tra i paesi coinvolti).</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Top 15 paesi per numero di progetti</h3>
+        <div class="chart-wrap tall"><canvas id="chartTopPaesiCount"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Top 15 paesi per finanziamento stimato (M€)</h3>
+        <div class="chart-wrap tall"><canvas id="chartTopPaesiBudget"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Analisi finanziaria</h2>
+    <p class="sub">Dimensione dei progetti, concentrazione del finanziamento e distribuzione per fascia di importo.</p>
+    <div class="grid">
+      <div class="card wide">
+        <h3>Top 10 progetti per importo (M€)</h3>
+        <div class="chart-wrap tall"><canvas id="chartTopProgetti"></canvas></div>
+      </div>
+      <div class="callout">
+        <span class="big" id="calloutConcentration">—</span>
+        del finanziamento complessivo in EUR è concentrato nei <b>10 maggiori progetti</b> su un totale di oltre 100 iniziative — una struttura tipica dei portafogli di cooperazione, dove pochi grandi programmi infrastrutturali/energetici assorbono la maggior parte delle risorse, mentre la maggioranza dei progetti sono interventi di dimensione medio-piccola (formazione, assistenza tecnica, cultura).
+      </div>
+      <div class="card">
+        <h3>Distribuzione progetti per fascia di importo</h3>
+        <div class="chart-wrap"><canvas id="chartBucketImporto"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Distribuzione progetti per durata</h3>
+        <p class="chart-note">Durata dichiarata, riclassificata in mesi (<span id="nDurataParsed"></span> progetti su <span id="nDurataTotale"></span> con durata interpretabile).</p>
+        <div class="chart-wrap"><canvas id="chartBucketDurata"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Analisi più approfondita</h2>
+    <p class="sub">Alcuni pattern che emergono incrociando le variabili: dimensione media dei progetti per direttrice e tipologia, maturità degli interventi per settore, principali strumenti di finanziamento ed enti esecutori ricorrenti.</p>
+    <div class="grid">
+      <div class="card wide">
+        <h3>Stato di avanzamento per direttrice</h3>
+        <p class="chart-note">Le direttrici "infrastrutturali" (Acqua, Energia) hanno una quota più alta di progetti ancora in fase di approvazione rispetto a Istruzione/Cultura, dove la maggioranza è già "in corso" o conclusa.</p>
+        <div class="chart-wrap tall"><canvas id="chartStatoPerDirettrice"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Importo medio per direttrice (M€)</h3>
+        <p class="chart-note">Istruzione/Formazione/Cultura ha il maggior numero di progetti ma la dimensione media più bassa; Energia ha meno progetti ma un importo medio molto più alto.</p>
+        <div class="chart-wrap"><canvas id="chartAvgDirettrice"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Importo medio per tipologia di progetto (M€)</h3>
+        <p class="chart-note">I progetti bilaterali sono in media più grandi di quelli transnazionali o pan-africani, spesso strutturati come singoli grandi finanziamenti infrastrutturali.</p>
+        <div class="chart-wrap"><canvas id="chartAvgTipo"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Principali strumenti / fonti di finanziamento</h3>
+        <div class="chart-wrap tall"><canvas id="chartRisorse"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Enti esecutori più ricorrenti</h3>
+        <p class="chart-note">Prevalenza di atenei italiani nei progetti di ricerca/formazione, oltre a UNDP come partner multilaterale più frequente.</p>
+        <div class="chart-wrap tall"><canvas id="chartEnti"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Programmi-ombrello e sotto-progetti</h3>
+        <p class="chart-note"><b id="calloutOmbrello">—</b> — alcuni progetti nel dataset sono in realtà componenti di iniziative più ampie, il che significa che i confronti per singolo progetto vanno letti insieme alla struttura a programma.</p>
+        <table class="list-table" id="tableOmbrello">
+          <thead><tr><th>Programma</th><th class="num">Sotto-progetti</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="note">
+  <p><b>Fonte:</b> dati strutturati pubblicati su <span id="fonteUrlFooter"></span>, estratti direttamente dal sito (nessun file intermedio come fonte) il <span id="estrattoIlFooter"></span>. La dashboard viene rigenerata eseguendo in sequenza <code>estrai_dati_mattei.py</code> (scarica i dati aggiornati dal sito) e <code>genera_dashboard.py</code> (ricalcola le statistiche e riscrive questa pagina). Il pulsante "Scarica dataset (CSV)" in alto esporta l'intero dataset così come caricato in questa pagina.</p>
+  <p><b>Note metodologiche:</b> gli importi sono espressi in milioni di euro salvo diversa indicazione; un progetto (finanziamento ETC) è denominato in USD ed è escluso dal totale EUR. Per il finanziamento per direttrice, ogni progetto multi-direttrice è attribuito solo alla prima direttrice indicata, per evitare doppi conteggi. Per il finanziamento per paese, l'importo dei progetti multi-paese è ripartito in quote uguali tra i paesi coinvolti (semplificazione: non riflette necessariamente la ripartizione reale dei fondi). I progetti con importo non quantificabile ("Da definire" o simili) sono esclusi dalle analisi finanziarie.</p>
+</footer>
+
+<script>
+const ROWS = __ROWS_JSON__;
+const CSV_COLUMNS = __CSV_COLUMNS_JSON__;
+const FONTE = "__FONTE__";
+const ESTRATTO_IL = "__ESTRATTO_IL__";
+
+document.getElementById('fonteUrl').textContent = FONTE;
+document.getElementById('estrattoIl').textContent = ESTRATTO_IL;
+document.getElementById('fonteUrlFooter').textContent = FONTE;
+document.getElementById('estrattoIlFooter').textContent = ESTRATTO_IL;
+
+// --- export CSV lato client, generato dal dataset caricato in pagina ---
+function csvEscape(v) {
+  if (v === null || v === undefined) v = '';
+  v = String(v);
+  if (/[",\n;]/.test(v)) {
+    v = '"' + v.replace(/"/g, '""') + '"';
+  }
+  return v;
+}
+function downloadCsv() {
+  const lines = [CSV_COLUMNS.map(csvEscape).join(',')];
+  ROWS.forEach(row => {
+    lines.push(CSV_COLUMNS.map(col => csvEscape(row[col])).join(','));
+  });
+  const csvContent = '﻿' + lines.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'progetti_piano_mattei.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
+
+// --- tutte le statistiche aggregate sono calcolate qui, in JS, a partire
+// dal dataset (righe complete o filtrate) cosi' che i filtri possano
+// ricalcolarle al volo senza bisogno di rigenerare la pagina lato server ---
+function splitList(str, sep) {
+  return (str || '').split(sep).map(s => s.trim()).filter(Boolean);
+}
+function round(x, d) {
+  const f = Math.pow(10, d);
+  return Math.round(x * f) / f;
+}
+function hasImporto(r) {
+  return r['Importo (milioni)'] !== '' && r['Importo (milioni)'] !== null && r['Importo (milioni)'] !== undefined;
+}
+
+function computeStats(rows) {
+  const n_total = rows.length;
+
+  const paesiCounter = new Map();
+  rows.forEach(r => splitList(r['Nazione/i'], ',').forEach(p => {
+    if (p !== 'Africa') paesiCounter.set(p, (paesiCounter.get(p) || 0) + 1);
+  }));
+
+  const statoCounter = new Map();
+  rows.forEach(r => { if (r['Stato']) statoCounter.set(r['Stato'], (statoCounter.get(r['Stato']) || 0) + 1); });
+
+  const tipoCounter = new Map();
+  rows.forEach(r => { if (r['Tipo Progetto']) tipoCounter.set(r['Tipo Progetto'], (tipoCounter.get(r['Tipo Progetto']) || 0) + 1); });
+
+  const direttriceCounter = new Map();
+  rows.forEach(r => splitList(r['Direttrice'], ';').forEach(d => direttriceCounter.set(d, (direttriceCounter.get(d) || 0) + 1)));
+
+  const direttriceBudget = new Map();
+  const direttriceBudgetN = new Map();
+  rows.forEach(r => {
+    if (hasImporto(r) && r['Valuta'] === 'EUR') {
+      const dirs = splitList(r['Direttrice'], ';');
+      const primary = dirs.length ? dirs[0] : 'Non specificata';
+      direttriceBudget.set(primary, (direttriceBudget.get(primary) || 0) + r['Importo (milioni)']);
+      direttriceBudgetN.set(primary, (direttriceBudgetN.get(primary) || 0) + 1);
+    }
+  });
+  const direttriceAvg = new Map();
+  direttriceBudget.forEach((v, k) => { if (direttriceBudgetN.get(k) > 0) direttriceAvg.set(k, round(v / direttriceBudgetN.get(k), 2)); });
+
+  const topPaesi = [...paesiCounter.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15);
+
+  const paeseBudget = new Map();
+  rows.forEach(r => {
+    const paesi = splitList(r['Nazione/i'], ',');
+    if (hasImporto(r) && r['Valuta'] === 'EUR' && paesi.length && !(paesi.length === 1 && paesi[0] === 'Africa')) {
+      const paesiReali = paesi.filter(p => p !== 'Africa');
+      const list = paesiReali.length ? paesiReali : paesi;
+      const share = r['Importo (milioni)'] / list.length;
+      list.forEach(p => paeseBudget.set(p, (paeseBudget.get(p) || 0) + share));
+    }
+  });
+  const topPaesiBudget = [...paeseBudget.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([k, v]) => [k, round(v, 1)]);
+
+  const eurRows = rows.filter(r => hasImporto(r) && r['Valuta'] === 'EUR');
+  const totImportoEur = eurRows.reduce((s, r) => s + r['Importo (milioni)'], 0);
+  const totImportoUsd = rows.filter(r => hasImporto(r) && r['Valuta'] === 'USD').reduce((s, r) => s + r['Importo (milioni)'], 0);
+
+  const topProgetti = [...eurRows].sort((a, b) => b['Importo (milioni)'] - a['Importo (milioni)']).slice(0, 10).map(r => {
+    const dirs = splitList(r['Direttrice'], ';');
+    return { nome: r['Nome Progetto'], importo: round(r['Importo (milioni)'], 1), direttrice: dirs.length ? dirs[0] : 'Non specificata', paesi: r['Nazione/i'] };
+  });
+  const top10Sum = topProgetti.reduce((s, p) => s + p.importo, 0);
+  const concentrationPct = totImportoEur ? round(100 * top10Sum / totImportoEur, 1) : 0;
+
+  const buckets = [[0, 1, '<1M'], [1, 10, '1-10M'], [10, 50, '10-50M'], [50, 100, '50-100M'], [100, Infinity, '>100M']];
+  const bucketCounts = new Map();
+  eurRows.forEach(r => {
+    for (const [lo, hi, label] of buckets) {
+      if (r['Importo (milioni)'] >= lo && r['Importo (milioni)'] < hi) { bucketCounts.set(label, (bucketCounts.get(label) || 0) + 1); break; }
+    }
+  });
+
+  const statoPerDirettrice = new Map();
+  rows.forEach(r => {
+    const dirs = splitList(r['Direttrice'], ';');
+    const primary = dirs.length ? dirs[0] : 'Non specificata';
+    if (!statoPerDirettrice.has(primary)) statoPerDirettrice.set(primary, new Map());
+    if (r['Stato']) {
+      const m = statoPerDirettrice.get(primary);
+      m.set(r['Stato'], (m.get(r['Stato']) || 0) + 1);
+    }
+  });
+
+  const nChildren = rows.filter(r => r['ID Progetto Padre']).length;
+  const parentIds = [...new Set(rows.filter(r => r['ID Progetto Padre']).map(r => r['ID Progetto Padre']))].sort();
+  const byId = new Map(rows.map(r => [r['ID Progetto'], r]));
+  const programmiOmbrello = [];
+  parentIds.forEach(pid => {
+    const parentRow = byId.get(pid);
+    const nSub = rows.filter(r => r['ID Progetto Padre'] === pid).length;
+    if (parentRow) programmiOmbrello.push({ nome: parentRow['Nome Progetto'], n_sotto_progetti: nSub });
+  });
+  programmiOmbrello.sort((a, b) => b.n_sotto_progetti - a.n_sotto_progetti);
+
+  const risorseCounter = new Map();
+  rows.forEach(r => splitList(r['Strumento / Risorse'], ';').forEach(s => risorseCounter.set(s, (risorseCounter.get(s) || 0) + 1)));
+
+  const enteCounter = new Map();
+  rows.forEach(r => {
+    (r['Ente Esecutore / Capofila'] || '').split(/[,;]/).forEach(e => {
+      e = e.trim();
+      if (e.length > 3) enteCounter.set(e, (enteCounter.get(e) || 0) + 1);
+    });
+  });
+
+  function parseDurataMesi(s) {
+    s = (s || '').trim().toLowerCase();
+    let m = s.match(/^(\d+(?:[.,]\d+)?)\s*mes/);
+    if (m) return parseFloat(m[1].replace(',', '.'));
+    m = s.match(/^(\d+(?:[.,]\d+)?)\s*ann/);
+    if (m) return parseFloat(m[1].replace(',', '.')) * 12;
+    return null;
+  }
+  const durateMesi = rows.map(r => parseDurataMesi(r['Durata'])).filter(d => d !== null);
+  const durataBuckets = [[0, 12, '<=1 anno'], [12, 24, '1-2 anni'], [24, 36, '2-3 anni'], [36, 60, '3-5 anni'], [60, Infinity, '>5 anni']];
+  const durataBucketCounts = new Map();
+  durateMesi.forEach(d => {
+    for (const [lo, hi, label] of durataBuckets) {
+      if (d > lo && d <= hi) { durataBucketCounts.set(label, (durataBucketCounts.get(label) || 0) + 1); break; }
+    }
+  });
+
+  const tipoVals = new Map();
+  eurRows.forEach(r => {
+    const t = r['Tipo Progetto'];
+    if (!tipoVals.has(t)) tipoVals.set(t, []);
+    tipoVals.get(t).push(r['Importo (milioni)']);
+  });
+  const tipoAvg = new Map(), tipoCount = new Map();
+  tipoVals.forEach((arr, k) => { tipoAvg.set(k, round(arr.reduce((s, v) => s + v, 0) / arr.length, 2)); tipoCount.set(k, arr.length); });
+
+  const objFromMap = (m) => Object.fromEntries(m);
+  const objFromMapOfMap = (m) => Object.fromEntries([...m.entries()].map(([k, v]) => [k, objFromMap(v)]));
+
+  return {
+    n_total,
+    tot_importo_eur: round(totImportoEur, 1),
+    tot_importo_usd: round(totImportoUsd, 1),
+    n_nazioni_uniche: paesiCounter.size,
+    stato_counter: objFromMap(statoCounter),
+    tipo_counter: objFromMap(tipoCounter),
+    direttrice_counter: objFromMap(direttriceCounter),
+    direttrice_budget: objFromMap(new Map([...direttriceBudget.entries()].map(([k, v]) => [k, round(v, 1)]))),
+    direttrice_avg: objFromMap(direttriceAvg),
+    top_paesi: topPaesi,
+    top_paesi_budget: topPaesiBudget,
+    top_progetti: topProgetti,
+    concentration_pct: concentrationPct,
+    top10_sum: round(top10Sum, 1),
+    bucket_order: buckets.map(b => b[2]),
+    bucket_counts: objFromMap(bucketCounts),
+    stato_per_direttrice: objFromMapOfMap(statoPerDirettrice),
+    n_programmi_ombrello: programmiOmbrello.length,
+    n_children: nChildren,
+    programmi_ombrello: programmiOmbrello,
+    top_risorse: [...risorseCounter.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10),
+    top_enti: [...enteCounter.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10),
+    durata_bucket_order: durataBuckets.map(b => b[2]),
+    durata_bucket_counts: objFromMap(durataBucketCounts),
+    n_durata_parsed: durateMesi.length,
+    tipo_avg: objFromMap(tipoAvg),
+    tipo_count: objFromMap(tipoCount),
+  };
+}
+
+const palette = {
+  slot: (n) => getComputedStyle(document.documentElement).getPropertyValue(`--slot-${n}`).trim(),
+  text: () => getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim(),
+  textSecondary: () => getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim(),
+  muted: () => getComputedStyle(document.documentElement).getPropertyValue('--muted').trim(),
+  grid: () => getComputedStyle(document.documentElement).getPropertyValue('--grid').trim(),
+  baseline: () => getComputedStyle(document.documentElement).getPropertyValue('--baseline').trim(),
+  surface: () => getComputedStyle(document.documentElement).getPropertyValue('--surface-1').trim(),
+};
+
+const DIRETTRICE_ORDER = ['Acqua','Agricoltura/Pesca','Energia','Infrastrutture fisiche e digitali',"Istruzione/Formazione/Cultura",'Salute'];
+const DIRETTRICE_SLOT = {
+  'Acqua': 1, 'Agricoltura/Pesca': 2, 'Energia': 3,
+  'Infrastrutture fisiche e digitali': 4, "Istruzione/Formazione/Cultura": 5, 'Salute': 6
+};
+const STATO_ORDER = ['Identificato','Formulato','Approvato','In corso','Concluso'];
+const STATO_SLOT = {'Identificato':1,'Formulato':2,'Approvato':3,'In corso':4,'Concluso':5};
+const TIPO_ORDER = ['Bilaterale','Transnazionale','Panafricano','Regionale / non specificato'];
+const TIPO_SLOT = {'Bilaterale':1,'Transnazionale':2,'Panafricano':3,'Regionale / non specificato':4};
+
+// ---------------------------------------------------------------- filtri --
+const ALL_PAESI = [...new Set(ROWS.flatMap(r => splitList(r['Nazione/i'], ',')))]
+  .filter(p => p !== 'Africa')
+  .sort((a, b) => a.localeCompare(b, 'it'));
+const ALL_STATI = STATO_ORDER.filter(s => ROWS.some(r => r['Stato'] === s));
+
+const FILTER_DEFS = [
+  {
+    key: 'direttrice', label: 'Direttrice', options: DIRETTRICE_ORDER, search: false,
+    countFn: () => { const m = new Map(); ROWS.forEach(r => splitList(r['Direttrice'], ';').forEach(d => m.set(d, (m.get(d) || 0) + 1))); return m; },
+    match: (row, selected) => selected.size === 0 || splitList(row['Direttrice'], ';').some(d => selected.has(d)),
+  },
+  {
+    key: 'paese', label: 'Paese', options: ALL_PAESI, search: true,
+    countFn: () => { const m = new Map(); ROWS.forEach(r => splitList(r['Nazione/i'], ',').forEach(p => { if (p !== 'Africa') m.set(p, (m.get(p) || 0) + 1); })); return m; },
+    match: (row, selected) => selected.size === 0 || splitList(row['Nazione/i'], ',').some(p => selected.has(p)),
+  },
+  {
+    key: 'stato', label: 'Stato', options: ALL_STATI, search: false,
+    countFn: () => { const m = new Map(); ROWS.forEach(r => { if (r['Stato']) m.set(r['Stato'], (m.get(r['Stato']) || 0) + 1); }); return m; },
+    match: (row, selected) => selected.size === 0 || selected.has(row['Stato']),
+  },
+];
+const filterState = {};
+FILTER_DEFS.forEach(f => { filterState[f.key] = new Set(); });
+
+function getFilteredRows() {
+  return ROWS.filter(row => FILTER_DEFS.every(f => f.match(row, filterState[f.key])));
+}
+
+let currentRows = ROWS;
+
+function buildFilterDropdown(fdef) {
+  const counts = fdef.countFn();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'filter-dropdown';
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'btn filter-toggle';
+  toggle.innerHTML = `${fdef.label} <span class="badge" hidden></span><span class="chev">▾</span>`;
+  wrap.appendChild(toggle);
+
+  const panel = document.createElement('div');
+  panel.className = 'filter-panel';
+  panel.hidden = true;
+  panel.addEventListener('click', (e) => e.stopPropagation());
+
+  let searchInput = null;
+  if (fdef.search) {
+    searchInput = document.createElement('input');
+    searchInput.type = 'search';
+    searchInput.placeholder = `Cerca ${fdef.label.toLowerCase()}…`;
+    panel.appendChild(searchInput);
+  }
+
+  const listWrap = document.createElement('div');
+  panel.appendChild(listWrap);
+
+  function renderOptions(filterText) {
+    listWrap.innerHTML = '';
+    const ft = (filterText || '').toLowerCase();
+    const opts = fdef.options.filter(o => o.toLowerCase().includes(ft));
+    if (opts.length === 0) {
+      const div = document.createElement('div');
+      div.className = 'filter-option-empty';
+      div.textContent = 'Nessun risultato';
+      listWrap.appendChild(div);
+      return;
+    }
+    opts.forEach(opt => {
+      const label = document.createElement('label');
+      label.className = 'filter-option';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = filterState[fdef.key].has(opt);
+      cb.addEventListener('change', () => {
+        if (cb.checked) filterState[fdef.key].add(opt); else filterState[fdef.key].delete(opt);
+        onFilterChange();
+      });
+      const span = document.createElement('span');
+      span.textContent = opt;
+      const n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = counts.get(opt) || 0;
+      label.append(cb, span, n);
+      listWrap.appendChild(label);
+    });
+  }
+  renderOptions('');
+  if (searchInput) searchInput.addEventListener('input', () => renderOptions(searchInput.value));
+
+  const actions = document.createElement('div');
+  actions.className = 'filter-panel-actions';
+  const allBtn = document.createElement('button');
+  allBtn.type = 'button';
+  allBtn.textContent = 'Seleziona tutti';
+  allBtn.addEventListener('click', () => {
+    fdef.options.forEach(o => filterState[fdef.key].add(o));
+    renderOptions(searchInput ? searchInput.value : '');
+    onFilterChange();
+  });
+  const noneBtn = document.createElement('button');
+  noneBtn.type = 'button';
+  noneBtn.textContent = 'Nessuno';
+  noneBtn.addEventListener('click', () => {
+    filterState[fdef.key].clear();
+    renderOptions(searchInput ? searchInput.value : '');
+    onFilterChange();
+  });
+  actions.append(allBtn, noneBtn);
+  panel.appendChild(actions);
+  wrap.appendChild(panel);
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const wasHidden = panel.hidden;
+    document.querySelectorAll('.filter-panel').forEach(p => { p.hidden = true; });
+    panel.hidden = !wasHidden;
+  });
+
+  fdef._badge = toggle.querySelector('.badge');
+  fdef._renderOptions = renderOptions;
+  return wrap;
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.filter-panel').forEach(p => { p.hidden = true; });
+});
+
+function updateBadgesAndSummary() {
+  FILTER_DEFS.forEach(f => {
+    const n = filterState[f.key].size;
+    if (f._badge) {
+      f._badge.hidden = n === 0;
+      f._badge.textContent = n;
+    }
+  });
+  const anyActive = FILTER_DEFS.some(f => filterState[f.key].size > 0);
+  document.getElementById('filterReset').disabled = !anyActive;
+  const filtered = getFilteredRows();
+  document.getElementById('filterSummary').innerHTML = anyActive
+    ? `<b>${filtered.length}</b> di ${ROWS.length} progetti mostrati`
+    : `${ROWS.length} progetti`;
+  return filtered;
+}
+
+function onFilterChange() {
+  currentRows = updateBadgesAndSummary();
+  renderAll(currentRows);
+}
+
+const filterBarSlots = document.getElementById('filterBarSlots');
+FILTER_DEFS.forEach(f => filterBarSlots.appendChild(buildFilterDropdown(f)));
+
+document.getElementById('filterReset').addEventListener('click', () => {
+  FILTER_DEFS.forEach(f => { filterState[f.key].clear(); if (f._renderOptions) f._renderOptions(''); });
+  document.querySelectorAll('.filter-panel').forEach(p => { p.hidden = true; });
+  onFilterChange();
+});
+
+function fmtInt(n) { return new Intl.NumberFormat('it-IT').format(Math.round(n)); }
+function fmtM(n) { return new Intl.NumberFormat('it-IT', {maximumFractionDigits: 1}).format(n); }
+
+function baseScales(opts) {
+  const c = palette;
+  return Object.assign({
+    x: {
+      grid: { color: c.grid(), drawTicks: false },
+      border: { color: c.baseline() },
+      ticks: { color: c.textSecondary(), font: { size: 11 } },
+    },
+    y: {
+      grid: { display: false },
+      border: { color: c.baseline() },
+      ticks: { color: c.textSecondary(), font: { size: 11 } },
+    }
+  }, opts || {});
+}
+
+function commonBarOptions(extra) {
+  const c = palette;
+  return Object.assign({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: c.surface(),
+        titleColor: c.text(),
+        bodyColor: c.textSecondary(),
+        borderColor: c.grid(),
+        borderWidth: 1,
+        padding: 10,
+        titleFont: { size: 12, weight: '600' },
+        bodyFont: { size: 12 },
+      }
+    }
+  }, extra || {});
+}
+
+let charts = [];
+function registerChart(ctxId, config) {
+  const el = document.getElementById(ctxId);
+  const chart = new Chart(el, config);
+  charts.push({chart, config});
+  return chart;
+}
+
+function renderAll(rows) {
+  charts.forEach(({chart}) => chart.destroy());
+  charts = [];
+  const c = palette;
+  const DATA = computeStats(rows);
+
+  document.getElementById('statTotProgetti').textContent = fmtInt(DATA.n_total);
+  document.getElementById('statTotProgettiNote').textContent = DATA.n_total
+    ? `di cui ${DATA.n_children} componenti di programmi-ombrello`
+    : 'nessun progetto corrisponde ai filtri';
+  document.getElementById('statTotBudget').textContent = '€ ' + fmtM(DATA.tot_importo_eur) + ' M';
+  document.getElementById('statTotBudgetNote').textContent = DATA.tot_importo_usd
+    ? `+ $${fmtM(DATA.tot_importo_usd)} M su un progetto in USD, non incluso`
+    : '';
+  document.getElementById('statNazioni').textContent = fmtInt(DATA.n_nazioni_uniche);
+  const inCorso = DATA.stato_counter['In corso'] || 0;
+  document.getElementById('statInCorso').textContent = fmtInt(inCorso);
+  document.getElementById('statInCorsoNote').textContent = DATA.n_total
+    ? `${fmtM(100*inCorso/DATA.n_total)}% del totale`
+    : '—';
+
+  {
+    const labels = DIRETTRICE_ORDER.filter(d => DATA.direttrice_counter[d] !== undefined);
+    const values = labels.map(d => DATA.direttrice_counter[d] || 0);
+    const colors = labels.map(d => c.slot(DIRETTRICE_SLOT[d]));
+    registerChart('chartDirettriceCount', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4, maxBarThickness: 34 }] },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({ x: { grid: { color: c.grid() }, border: {color: c.baseline()}, ticks: {color: c.textSecondary()}, beginAtZero: true } }),
+      })
+    });
+  }
+
+  {
+    const labels = DIRETTRICE_ORDER.filter(d => DATA.direttrice_budget[d] !== undefined);
+    const values = labels.map(d => DATA.direttrice_budget[d] || 0);
+    const colors = labels.map(d => c.slot(DIRETTRICE_SLOT[d]));
+    registerChart('chartDirettriceBudget', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4, maxBarThickness: 34 }] },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({ x: { grid: { color: c.grid() }, border: {color: c.baseline()}, ticks: {color: c.textSecondary()}, beginAtZero: true } }),
+        plugins: { legend: {display:false}, tooltip: { callbacks: { label: (ctx) => `€ ${fmtM(ctx.parsed.x)} M` } } }
+      })
+    });
+  }
+
+  {
+    const labels = STATO_ORDER.filter(s => DATA.stato_counter[s] !== undefined);
+    const values = labels.map(s => DATA.stato_counter[s]);
+    const colors = labels.map(s => c.slot(STATO_SLOT[s]));
+    registerChart('chartStato', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4, maxBarThickness: 40 }] },
+      options: commonBarOptions({
+        scales: baseScales({ y: { beginAtZero: true, grid: {color: c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} }, x: {grid:{display:false}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()}} }),
+      })
+    });
+  }
+
+  {
+    const labels = TIPO_ORDER.filter(t => DATA.tipo_counter[t] !== undefined);
+    const values = labels.map(t => DATA.tipo_counter[t]);
+    const colors = labels.map(t => c.slot(TIPO_SLOT[t]));
+    registerChart('chartTipo', {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderColor: c.surface(), borderWidth: 2 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: c.textSecondary(), font: {size: 11}, boxWidth: 12, padding: 12 } },
+          tooltip: commonBarOptions().plugins.tooltip,
+        }
+      }
+    });
+  }
+
+  {
+    const entries = DATA.top_paesi;
+    registerChart('chartTopPaesiCount', {
+      type: 'bar',
+      data: { labels: entries.map(e=>e[0]), datasets: [{ data: entries.map(e=>e[1]), backgroundColor: c.slot(1), borderRadius: 4, maxBarThickness: 18 }] },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({ x: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} } }),
+      })
+    });
+  }
+
+  {
+    const entries = DATA.top_paesi_budget;
+    registerChart('chartTopPaesiBudget', {
+      type: 'bar',
+      data: { labels: entries.map(e=>e[0]), datasets: [{ data: entries.map(e=>e[1]), backgroundColor: c.slot(1), borderRadius: 4, maxBarThickness: 18 }] },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({ x: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} } }),
+        plugins: { legend:{display:false}, tooltip: { callbacks: { label: (ctx) => `€ ${fmtM(ctx.parsed.x)} M (stima)` } } }
+      })
+    });
+  }
+
+  {
+    const entries = DATA.top_progetti;
+    const labels = entries.map(e => e.nome.length > 55 ? e.nome.slice(0,52)+'…' : e.nome);
+    registerChart('chartTopProgetti', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: entries.map(e=>e.importo), backgroundColor: c.slot(1), borderRadius: 4, maxBarThickness: 22 }] },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({ x: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} }, y: { ticks: {color: c.textSecondary(), font:{size:10.5}} } }),
+        plugins: { legend:{display:false}, tooltip: { callbacks: {
+          title: (items) => entries[items[0].dataIndex].nome,
+          label: (ctx) => [`€ ${fmtM(ctx.parsed.x)} M`, entries[ctx.dataIndex].direttrice, entries[ctx.dataIndex].paesi]
+        } } }
+      })
+    });
+  }
+
+  document.getElementById('calloutConcentration').textContent = `${fmtM(DATA.concentration_pct)}%`;
+
+  {
+    const labels = DATA.bucket_order;
+    const values = labels.map(l => DATA.bucket_counts[l] || 0);
+    registerChart('chartBucketImporto', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: values, backgroundColor: c.slot(1), borderRadius: 4, maxBarThickness: 44 }] },
+      options: commonBarOptions({
+        scales: baseScales({ y: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} }, x: {grid:{display:false}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()}} }),
+      })
+    });
+  }
+
+  {
+    document.getElementById('nDurataParsed').textContent = DATA.n_durata_parsed;
+    document.getElementById('nDurataTotale').textContent = DATA.n_total;
+    const labels = DATA.durata_bucket_order;
+    const values = labels.map(l => DATA.durata_bucket_counts[l] || 0);
+    registerChart('chartBucketDurata', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: values, backgroundColor: c.slot(1), borderRadius: 4, maxBarThickness: 44 }] },
+      options: commonBarOptions({
+        scales: baseScales({ y: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} }, x: {grid:{display:false}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()}} }),
+      })
+    });
+  }
+
+  {
+    const labels = DIRETTRICE_ORDER.filter(d => DATA.stato_per_direttrice[d]);
+    const datasets = STATO_ORDER.map(stato => ({
+      label: stato,
+      data: labels.map(d => (DATA.stato_per_direttrice[d] && DATA.stato_per_direttrice[d][stato]) || 0),
+      backgroundColor: c.slot(STATO_SLOT[stato]),
+      borderRadius: 3,
+      maxBarThickness: 34,
+    }));
+    registerChart('chartStatoPerDirettrice', {
+      type: 'bar',
+      data: { labels, datasets },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({
+          x: { stacked: true, beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} },
+          y: { stacked: true, grid: {display:false}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} },
+        }),
+        plugins: { legend: { display: true, position: 'bottom', labels: { color: c.textSecondary(), font:{size:11}, boxWidth: 12, padding: 10 } } },
+      })
+    });
+  }
+
+  {
+    const labels = DIRETTRICE_ORDER.filter(d => DATA.direttrice_avg[d] !== undefined);
+    const values = labels.map(d => DATA.direttrice_avg[d]);
+    const colors = labels.map(d => c.slot(DIRETTRICE_SLOT[d]));
+    registerChart('chartAvgDirettrice', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4, maxBarThickness: 30 }] },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({ x: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} } }),
+        plugins: { legend:{display:false}, tooltip: { callbacks: { label: (ctx) => `€ ${fmtM(ctx.parsed.x)} M medi` } } }
+      })
+    });
+  }
+
+  {
+    const labels = TIPO_ORDER.filter(t => DATA.tipo_avg[t] !== undefined);
+    const values = labels.map(t => DATA.tipo_avg[t]);
+    const colors = labels.map(t => c.slot(TIPO_SLOT[t]));
+    registerChart('chartAvgTipo', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4, maxBarThickness: 34 }] },
+      options: commonBarOptions({
+        scales: baseScales({ y: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} }, x: {grid:{display:false}, border:{color:c.baseline()}, ticks:{color:c.textSecondary(), font:{size:10}}} }),
+        plugins: { legend:{display:false}, tooltip: { callbacks: { label: (ctx) => `€ ${fmtM(ctx.parsed.y)} M medi (n=${DATA.tipo_count[labels[ctx.dataIndex]]})` } } }
+      })
+    });
+  }
+
+  {
+    const entries = DATA.top_risorse;
+    const labels = entries.map(e => e[0].length > 42 ? e[0].slice(0,39)+'…' : e[0]);
+    registerChart('chartRisorse', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: entries.map(e=>e[1]), backgroundColor: c.slot(1), borderRadius: 4, maxBarThickness: 18 }] },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({ x: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} }, y: {ticks:{color:c.textSecondary(), font:{size:10.5}}} }),
+        plugins: { legend:{display:false}, tooltip: { callbacks: { title: (items) => entries[items[0].dataIndex][0], label: (ctx) => `${ctx.parsed.x} progetti` } } }
+      })
+    });
+  }
+
+  {
+    const entries = DATA.top_enti;
+    const labels = entries.map(e => e[0].length > 42 ? e[0].slice(0,39)+'…' : e[0]);
+    registerChart('chartEnti', {
+      type: 'bar',
+      data: { labels, datasets: [{ data: entries.map(e=>e[1]), backgroundColor: c.slot(1), borderRadius: 4, maxBarThickness: 18 }] },
+      options: commonBarOptions({
+        indexAxis: 'y',
+        scales: baseScales({ x: { beginAtZero: true, grid:{color:c.grid()}, border:{color:c.baseline()}, ticks:{color:c.textSecondary()} }, y: {ticks:{color:c.textSecondary(), font:{size:10.5}}} }),
+        plugins: { legend:{display:false}, tooltip: { callbacks: { title: (items) => entries[items[0].dataIndex][0], label: (ctx) => `${ctx.parsed.x} progetti` } } }
+      })
+    });
+  }
+
+  {
+    document.getElementById('calloutOmbrello').textContent = `${DATA.n_programmi_ombrello} programmi-ombrello raggruppano ${DATA.n_children} sotto-progetti`;
+    const tbody = document.querySelector('#tableOmbrello tbody');
+    tbody.innerHTML = '';
+    DATA.programmi_ombrello.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${p.nome}</td><td class="num">${p.n_sotto_progetti}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+const root = document.documentElement;
+const btn = document.getElementById('themeToggle');
+function applyThemeLabel() {
+  const t = root.getAttribute('data-theme');
+  btn.textContent = 'Tema: ' + (t === 'dark' ? 'scuro' : t === 'light' ? 'chiaro' : 'automatico');
+}
+btn.addEventListener('click', () => {
+  const current = root.getAttribute('data-theme');
+  const next = current === null ? 'dark' : current === 'dark' ? 'light' : null;
+  if (next === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', next);
+  applyThemeLabel();
+  renderAll(currentRows);
+});
+applyThemeLabel();
+
+currentRows = updateBadgesAndSummary();
+renderAll(currentRows);
+</script>
+
+</body>
+</html>
