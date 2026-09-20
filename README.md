@@ -8,7 +8,7 @@ I dati **non** sono un file statico curato a mano: vengono estratti direttamente
 
 | File | Descrizione |
 |---|---|
-| [`dashboard_piano_mattei.html`](dashboard_piano_mattei.html) | La dashboard, pronta all'uso — basta aprirla in un browser. Nessun server richiesto. |
+| `index.html` | La dashboard generata — pubblicata su [gnucoop.github.io/dashboard-dati-piano-mattei](https://gnucoop.github.io/dashboard-dati-piano-mattei/). Generata dalla pipeline, non versionata (vedi sotto). |
 | [`estrai_dati_mattei.py`](estrai_dati_mattei.py) | Script che scarica i dati aggiornati direttamente da governo.it e li normalizza in `dati_progetti_mattei.json`. |
 | [`genera_dashboard.py`](genera_dashboard.py) | Rigenera `index.html` (e il CSV) a partire da `dati_progetti_mattei.json`. |
 | [`dashboard_template.html`](dashboard_template.html) | Template HTML/CSS/JS della dashboard, usato da `genera_dashboard.py`. |
@@ -17,7 +17,7 @@ I file generati dalla pipeline — `dati_progetti_mattei.json`, `progetti_piano_
 
 ## Dashboard
 
-Apri `dashboard_piano_mattei.html` in un browser. Include:
+Apri [gnucoop.github.io/dashboard-dati-piano-mattei](https://gnucoop.github.io/dashboard-dati-piano-mattei/) (oppure `index.html` dopo averlo generato in locale, vedi sotto). Include:
 
 - **Quadro generale**: progetti per direttrice, stato di avanzamento, tipologia (bilaterale/transnazionale/panafricano).
 - **Distribuzione geografica**: top 15 paesi per numero di progetti e per finanziamento stimato.
