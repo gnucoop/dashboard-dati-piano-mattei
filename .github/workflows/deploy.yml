@@ -43,8 +43,6 @@ jobs:
         run: |
           mkdir -p dist
           cp index.html dist/
-          cp dati_progetti_mattei.json dist/
-          cp progetti_piano_mattei_aggiornato.csv dist/
 
       - name: Carica artefatto per GitHub Pages
         uses: actions/upload-pages-artifact@v3

@@ -10,10 +10,10 @@ I dati **non** sono un file statico curato a mano: vengono estratti direttamente
 |---|---|
 | [`dashboard_piano_mattei.html`](dashboard_piano_mattei.html) | La dashboard, pronta all'uso — basta aprirla in un browser. Nessun server richiesto. |
 | [`estrai_dati_mattei.py`](estrai_dati_mattei.py) | Script che scarica i dati aggiornati direttamente da governo.it e li normalizza in `dati_progetti_mattei.json`. |
-| [`genera_dashboard.py`](genera_dashboard.py) | Rigenera `dashboard_piano_mattei.html` (e il CSV) a partire da `dati_progetti_mattei.json`. |
+| [`genera_dashboard.py`](genera_dashboard.py) | Rigenera `index.html` (e il CSV) a partire da `dati_progetti_mattei.json`. |
 | [`dashboard_template.html`](dashboard_template.html) | Template HTML/CSS/JS della dashboard, usato da `genera_dashboard.py`. |
-| `dati_progetti_mattei.json` | Dati grezzi normalizzati, prodotti da `estrai_dati_mattei.py` — fonte per tutto il resto. |
-| `progetti_piano_mattei_aggiornato.csv` | Export tabellare dello stesso dataset, generato come sotto-prodotto (non è la fonte della dashboard). |
+
+I file generati dalla pipeline — `dati_progetti_mattei.json`, `progetti_piano_mattei_aggiornato.csv` e `index.html` — non sono versionati: vengono ricreati da zero ad ogni esecuzione degli script e ad ogni deploy.
 
 ## Dashboard
 
@@ -45,10 +45,20 @@ Il sito governo.it non espone una vera API: i dati dei progetti sono incorporati
 
 ```bash
 python3 estrai_dati_mattei.py     # scarica i dati aggiornati dal sito
-python3 genera_dashboard.py       # rigenera dashboard_piano_mattei.html + CSV
+python3 genera_dashboard.py       # rigenera index.html + CSV
 ```
 
 Richiede solo Python 3 (nessuna dipendenza esterna, solo libreria standard).
+
+## Pubblicazione
+
+La dashboard è pubblicata su GitHub Pages all'indirizzo
+[gnucoop.github.io/dashboard-dati-piano-mattei](https://gnucoop.github.io/dashboard-dati-piano-mattei/).
+
+Il workflow [`deploy.yml`](.github/workflows/deploy.yml) riesegue l'intera pipeline
+(estrazione + generazione) ogni giorno alle 04:00 UTC e pubblica `index.html`,
+quindi il sito riflette sempre i dati più recenti disponibili su governo.it.
+Si può lanciare anche a mano dalla tab *Actions*.
 
 ## Fonte
 
