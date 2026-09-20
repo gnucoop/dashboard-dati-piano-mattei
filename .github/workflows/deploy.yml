@@ -33,16 +33,23 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Esegui lo script per generare l'HTML
+      - name: Estrai i dati aggiornati dal sito del governo
+        run: python estrai_dati_mattei.py
+
+      - name: Genera index.html
+        run: python genera_dashboard.py
+
+      - name: Prepara la cartella da pubblicare
         run: |
-          python estrai_dati_mattei.py  # <-- SOSTITUISCI con il nome esatto del tuo script Python
+          mkdir -p dist
+          cp index.html dist/
+          cp dati_progetti_mattei.json dist/
+          cp progetti_piano_mattei_aggiornato.csv dist/
 
       - name: Carica artefatto per GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          # Se lo script genera index.html nella root del repo usa '.'
-          # Se lo salva in una cartella specifica (es. dist o output), metti './dist'
-          path: '.'
+          path: './dist'
 
   deploy:
     environment:
