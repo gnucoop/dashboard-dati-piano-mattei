@@ -4,7 +4,7 @@ Dashboard interattiva e dataset strutturato dei progetti di cooperazione allo sv
 
 I dati **non** sono un file statico curato a mano: vengono estratti direttamente dal sito ufficiale ad ogni esecuzione degli script (vedi [Come funziona](#come-funziona-la-pipeline-dati)), quindi possono essere aggiornati in qualunque momento senza dover ricostruire nulla a mano.
 
-## Contenuto del repo
+## Contenuto del repository
 
 | File | Descrizione |
 |---|---|
