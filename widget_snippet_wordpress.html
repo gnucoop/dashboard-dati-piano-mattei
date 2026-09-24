@@ -1,0 +1,33 @@
+<!-- Dati Piano Mattei (Gnucoop): barra con 3 iframe. Incollare in un blocco "HTML personalizzato". -->
+<style>
+  .gnc-mattei-bar {
+    background: #000;
+    display: grid;
+    grid-template-columns: 1fr 1.25fr 1.25fr;
+    gap: 1px;
+    border: 1px solid #000;
+    margin: 30px 0;
+  }
+  .gnc-mattei-bar iframe {
+    display: block;
+    width: 100%;
+    height: 340px;
+    border: 0;
+    background: #000;
+    box-shadow: 0 0 0 1px #2c2c2a;
+  }
+  @media (max-width: 991px) {
+    .gnc-mattei-bar { grid-template-columns: 1fr 1fr; }
+    .gnc-mattei-bar iframe:first-child { grid-column: 1 / -1; height: 280px; }
+  }
+  @media (max-width: 640px) {
+    .gnc-mattei-bar { grid-template-columns: 1fr; }
+    .gnc-mattei-bar iframe:first-child { height: 360px; }
+    .gnc-mattei-bar iframe { height: 330px; }
+  }
+</style>
+<div class="gnc-mattei-bar">
+  <iframe src="https://gnucoop.github.io/dashboard-dati-piano-mattei/widget/intro.html" title="Dati Piano Mattei: la dashboard di Gnucoop" loading="lazy"></iframe>
+  <iframe src="https://gnucoop.github.io/dashboard-dati-piano-mattei/widget/carosello-1.html" title="Dati Piano Mattei: grafici su settori e paesi" loading="lazy"></iframe>
+  <iframe src="https://gnucoop.github.io/dashboard-dati-piano-mattei/widget/carosello-2.html" title="Dati Piano Mattei: grafici sui finanziamenti" loading="lazy"></iframe>
+</div>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dati Piano Mattei — grafici</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:             #000000;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted:          #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --tooltip:        #1a1a19;
+
+    /* palette scura della dashboard */
+    --slot-1: #3987e5;
+    --slot-2: #d95926;
+    --slot-3: #199e70;
+    --slot-4: #c98500;
+    --slot-5: #d55181;
+    --slot-6: #008300;
+    --slot-7: #9085e9;
+    --slot-8: #e66767;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 20px 12px;
+    overflow: hidden;
+  }
+  a.stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    touch-action: pan-y;
+  }
+  a.stage:focus-visible { outline: 2px solid #ffffff; outline-offset: 4px; border-radius: 4px; }
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+  }
+  .slide.active {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease, visibility 0s;
+  }
+  .kicker {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  h2 {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .note {
+    margin: 2px 0 0;
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+  }
+  .chart-wrap { position: relative; flex: 1; min-height: 0; margin-top: 10px; }
+  footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--grid);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .dots { display: flex; gap: 2px; }
+  .dots button {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dots button::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--baseline);
+    transition: background 0.2s, width 0.2s;
+  }
+  .dots button[aria-current="true"]::before { background: var(--text-primary); width: 18px; border-radius: 4px; }
+  .dots button:focus-visible { outline: 2px solid #ffffff; border-radius: 4px; }
+  footer a { color: var(--text-secondary); text-decoration: none; white-space: nowrap; }
+  footer a:hover, footer a:focus-visible { color: var(--text-primary); }
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .slide.active { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <a class="stage" id="stage" href="__DASHBOARD_URL__" target="_blank" rel="noopener" aria-label="Apri la dashboard Dati Piano Mattei"></a>
+  <footer>
+    <div class="dots" id="dots" role="group" aria-label="Scegli il grafico"></div>
+    <a href="__DASHBOARD_URL__" target="_blank" rel="noopener">Dati al __AGGIORNATO_IL__ · Dashboard ↗</a>
+  </footer>
+
+<script>
+const CHARTS = __CHARTS_JSON__;
+const START_OFFSET = __START_OFFSET__; // sfasa i due caroselli di mezzo giro, cosi' non cambiano slide insieme
+const INTERVAL_MS = 7000;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const fmt = (n) => new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 }).format(n);
+const fmtValue = (spec, v) => spec.unit === 'eur' ? `€ ${fmt(v)} M` : fmt(v);
+
+// etichetta del valore in cima/in fondo a ogni barra: nel widget non c'e'
+// interazione garantita (mobile, niente hover), quindi i numeri vanno scritti
+const valueLabels = {
+  id: 'valueLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    const horizontal = chart.options.indexAxis === 'y';
+    ctx.save();
+    ctx.fillStyle = css('--text-secondary');
+    ctx.font = `600 11px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textBaseline = horizontal ? 'middle' : 'bottom';
+    ctx.textAlign = horizontal ? 'left' : 'center';
+    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+      const v = chart.data.datasets[0].data[i];
+      if (horizontal) ctx.fillText(fmt(v), bar.x + 5, bar.y);
+      else ctx.fillText(fmt(v), bar.x, bar.y - 4);
+    });
+    ctx.restore();
+  }
+};
+
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+const TICK_FONT_SIZE = 10.5;
+
+// Chart.js riserva all'asse delle categorie al massimo meta' larghezza e oltre
+// taglia le etichette: le accorciamo noi con "…" in base allo spazio reale
+const measureCtx = document.createElement('canvas').getContext('2d');
+function fitLabel(label, maxWidth) {
+  measureCtx.font = `${TICK_FONT_SIZE}px ${Chart.defaults.font.family}`;
+  if (measureCtx.measureText(label).width <= maxWidth) return label;
+  let s = label;
+  while (s.length > 1 && measureCtx.measureText(s + '…').width > maxWidth) s = s.slice(0, -1);
+  return s.trimEnd() + '…';
+}
+
+function buildChart(canvas, spec) {
+  const horizontal = spec.horizontal;
+  const tick = { color: css('--text-secondary'), font: { size: TICK_FONT_SIZE }, autoSkip: false };
+  if (horizontal) {
+    tick.callback = function (value) { return fitLabel(this.getLabelForValue(value), this.chart.width * 0.38); };
+  }
+  const categoryAxis = { grid: { display: false }, border: { color: css('--baseline') }, ticks: tick };
+  const valueAxis = { display: false, beginAtZero: true, grace: '12%' };
+  return new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: spec.labels,
+      datasets: [{
+        data: spec.values,
+        backgroundColor: spec.slots.map(n => css(`--slot-${n}`)),
+        borderRadius: 3,
+        maxBarThickness: horizontal ? 20 : 38,
+      }]
+    },
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 700 },
+      layout: { padding: horizontal ? { right: 34 } : { top: 16 } },
+      scales: horizontal ? { x: valueAxis, y: categoryAxis } : { x: categoryAxis, y: valueAxis },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: css('--tooltip'),
+          titleColor: css('--text-primary'),
+          bodyColor: css('--text-secondary'),
+          borderColor: css('--grid'),
+          borderWidth: 1,
+          padding: 8,
+          displayColors: false,
+          callbacks: {
+            title: (items) => (spec.full_labels || spec.labels)[items[0].dataIndex],
+            label: (ctx) => fmtValue(spec, horizontal ? ctx.parsed.x : ctx.parsed.y) + (spec.unit === 'progetti' ? ' progetti' : ''),
+          }
+        }
+      }
+    },
+    plugins: [valueLabels],
+  });
+}
+
+const stage = document.getElementById('stage');
+const dotsEl = document.getElementById('dots');
+const slides = CHARTS.map((spec, i) => {
+  const el = document.createElement('div');
+  el.className = 'slide';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = `<div class="kicker">Dati Piano Mattei · ${i + 1}/${CHARTS.length}</div><h2></h2>${spec.note ? '<p class="note"></p>' : ''}<div class="chart-wrap"><canvas role="img"></canvas></div>`;
+  el.querySelector('h2').textContent = spec.title;
+  if (spec.note) el.querySelector('.note').textContent = spec.note;
+  const canvas = el.querySelector('canvas');
+  canvas.setAttribute('aria-label', `${spec.title}: ` + spec.labels.map((l, j) => `${(spec.full_labels || spec.labels)[j]} ${fmtValue(spec, spec.values[j])}`).join('; '));
+  stage.appendChild(el);
+
+  const dot = document.createElement('button');
+  dot.type = 'button';
+  dot.setAttribute('aria-label', `Grafico ${i + 1}: ${spec.title}`);
+  dot.addEventListener('click', () => { show(i); restart(); });
+  dotsEl.appendChild(dot);
+
+  return { el, dot, canvas, spec, chart: null };
+});
+
+let current = -1;
+function show(i) {
+  if (i === current) return;
+  slides.forEach((s, j) => {
+    const on = j === i;
+    s.el.classList.toggle('active', on);
+    s.el.setAttribute('aria-hidden', on ? 'false' : 'true');
+    s.dot.setAttribute('aria-current', on ? 'true' : 'false');
+  });
+  const s = slides[i];
+  // il grafico si crea alla prima visualizzazione (dimensioni corrette) e poi
+  // ri-anima le barre ogni volta che torna in primo piano
+  if (!s.chart) s.chart = buildChart(s.canvas, s.spec);
+  else if (!reduceMotion) { s.chart.reset(); s.chart.update(); }
+  current = i;
+}
+
+// ---- autoplay: si ferma con mouse/focus sopra, a scheda nascosta o fuori schermo
+let timer = null, hovered = false, visible = true, phase = START_OFFSET * INTERVAL_MS / 2;
+function stop() { clearTimeout(timer); timer = null; }
+function restart() {
+  stop();
+  if (hovered || !visible || document.hidden || slides.length < 2) return;
+  timer = setTimeout(function next() {
+    phase = 0;
+    show((current + 1) % slides.length);
+    timer = setTimeout(next, INTERVAL_MS);
+  }, INTERVAL_MS + phase);
+}
+document.body.addEventListener('mouseenter', () => { hovered = true; stop(); });
+document.body.addEventListener('mouseleave', () => { hovered = false; restart(); });
+document.body.addEventListener('focusin', () => { hovered = true; stop(); });
+document.body.addEventListener('focusout', () => { hovered = false; restart(); });
+document.addEventListener('visibilitychange', restart);
+if ('IntersectionObserver' in window) {
+  new IntersectionObserver((entries) => {
+    visible = entries[0].isIntersecting;
+    restart();
+  }, { threshold: 0.4 }).observe(document.body);
+}
+
+// ---- swipe orizzontale su mobile
+let touchX = null, swiped = false;
+stage.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+stage.addEventListener('touchend', (e) => {
+  if (touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  touchX = null;
+  if (Math.abs(dx) > 40) {
+    swiped = true;
+    show((current + (dx < 0 ? 1 : slides.length - 1)) % slides.length);
+    restart();
+  }
+});
+stage.addEventListener('click', (e) => { if (swiped) { e.preventDefault(); swiped = false; } });
+
+show(0);
+restart();
+</script>
+</body>
+</html>

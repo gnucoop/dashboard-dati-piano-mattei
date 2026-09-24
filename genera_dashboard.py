@@ -14,7 +14,7 @@ e a incorporarli.
 
 Uso:
     python3 estrai_dati_mattei.py     # aggiorna dati_progetti_mattei.json dal sito
-    python3 genera_dashboard.py       # rigenera dashboard_piano_mattei.html + CSV
+    python3 genera_dashboard.py       # rigenera index.html + CSV + widget/
 """
 import csv
 import json
@@ -151,6 +151,206 @@ def write_csv(rows, path):
             writer.writerow(r)
 
 
+# ---------------------------------------------------------------- widget --
+# Widget da incorporare in siti terzi (3 iframe: testo + 2 caroselli di
+# grafici). A differenza della dashboard, qui le statistiche sono calcolate
+# in Python e incorporate gia' aggregate, cosi' le pagine restano leggere
+# (pochi KB invece dell'intero dataset). La logica rispecchia computeStats()
+# in dashboard_template.html: se cambia li', va aggiornata anche qui.
+
+WIDGET_DIR = BASE / "widget"
+DASHBOARD_URL = "https://gnucoop.github.io/dashboard-dati-piano-mattei/"
+WIDGET_BASE_URL = DASHBOARD_URL + "widget/"
+
+DIRETTRICE_ORDER = ["Acqua", "Agricoltura/Pesca", "Energia", "Infrastrutture fisiche e digitali",
+                    "Istruzione/Formazione/Cultura", "Salute"]
+DIRETTRICE_SLOT = {d: i + 1 for i, d in enumerate(DIRETTRICE_ORDER)}
+# etichette brevi per lo spazio ridotto dei grafici del widget (il nome completo resta nel tooltip)
+DIRETTRICE_SHORT = {"Agricoltura/Pesca": "Agricoltura e pesca", "Infrastrutture fisiche e digitali": "Infrastrutture",
+                    "Istruzione/Formazione/Cultura": "Istruzione e cultura"}
+STATO_ORDER = ["Identificato", "Formulato", "Approvato", "In corso", "Concluso"]
+STATO_SLOT = {s: i + 1 for i, s in enumerate(STATO_ORDER)}
+
+
+def split_list(s, sep):
+    return [x.strip() for x in (s or "").split(sep) if x.strip()]
+
+
+def truncate(s, n):
+    return s if len(s) <= n else s[:n - 1].rstrip() + "…"
+
+
+def short_ente(e):
+    """Nome breve di un ente esecutore, per le etichette del widget."""
+    m = re.search(r"\(([A-Z][A-Z0-9-]{1,9})\)\s*$", e)
+    if m:  # sigla tra parentesi, es. "Programma delle Nazioni Unite per lo Sviluppo (UNDP)"
+        return m.group(1)
+    return re.sub(r"^Universit[àa] degli Studi di ", "Università di ", e)
+
+
+def top(counter, n):
+    return sorted(counter.items(), key=lambda kv: -kv[1])[:n]
+
+
+def widget_stats(rows):
+    eur_rows = [r for r in rows if r["_importo"] is not None and r["_valuta"] == "EUR"]
+
+    def primary(r):
+        dirs = split_list(r["Direttrice"], ";")
+        return dirs[0] if dirs else "Non specificata"
+
+    direttrice_count, direttrice_budget, stato, paesi, paese_budget, enti = {}, {}, {}, {}, {}, {}
+    for r in rows:
+        for d in split_list(r["Direttrice"], ";"):
+            direttrice_count[d] = direttrice_count.get(d, 0) + 1
+        if r["Stato"]:
+            stato[r["Stato"]] = stato.get(r["Stato"], 0) + 1
+        for p in split_list(r["Nazione/i"], ","):
+            if p != "Africa":
+                paesi[p] = paesi.get(p, 0) + 1
+        for e in re.split(r"[,;]", r["Ente Esecutore / Capofila"] or ""):
+            e = e.strip()
+            if len(e) > 3:
+                enti[e] = enti.get(e, 0) + 1
+    for r in eur_rows:
+        direttrice_budget[primary(r)] = direttrice_budget.get(primary(r), 0) + r["_importo"]
+        ps = split_list(r["Nazione/i"], ",")
+        if ps and ps != ["Africa"]:
+            reali = [p for p in ps if p != "Africa"] or ps
+            for p in reali:
+                paese_budget[p] = paese_budget.get(p, 0) + r["_importo"] / len(reali)
+
+    buckets = [(0, 1, "<1M"), (1, 10, "1-10M"), (10, 50, "10-50M"), (50, 100, "50-100M"), (100, float("inf"), ">100M")]
+    bucket_counts = {label: 0 for _, _, label in buckets}
+    for r in eur_rows:
+        for lo, hi, label in buckets:
+            if lo <= r["_importo"] < hi:
+                bucket_counts[label] += 1
+                break
+
+    top_progetti = sorted(eur_rows, key=lambda r: -r["_importo"])[:8]
+    dir_labels = [d for d in DIRETTRICE_ORDER if d in direttrice_count]
+    dir_budget_labels = [d for d in DIRETTRICE_ORDER if d in direttrice_budget]
+    stato_labels = [s for s in STATO_ORDER if s in stato]
+    top_paesi = top(paesi, 10)
+    top_paesi_budget = top(paese_budget, 10)
+    top_enti = top(enti, 8)
+
+    charts = {
+        "direttrice_count": {
+            "title": "Progetti per direttrice",
+            "note": "Un progetto può coprire più direttrici",
+            "type": "bar", "horizontal": True, "unit": "progetti",
+            "labels": [DIRETTRICE_SHORT.get(d, d) for d in dir_labels], "full_labels": dir_labels,
+            "values": [direttrice_count[d] for d in dir_labels],
+            "slots": [DIRETTRICE_SLOT[d] for d in dir_labels],
+        },
+        "stato": {
+            "title": "Progetti per stato di avanzamento",
+            "type": "bar", "horizontal": False, "unit": "progetti",
+            "labels": stato_labels, "values": [stato[s] for s in stato_labels],
+            "slots": [STATO_SLOT[s] for s in stato_labels],
+        },
+        "top_paesi": {
+            "title": "Top 10 paesi per numero di progetti",
+            "type": "bar", "horizontal": True, "unit": "progetti",
+            "labels": [p for p, _ in top_paesi], "values": [n for _, n in top_paesi],
+            "slots": [1] * len(top_paesi),
+        },
+        "top_paesi_budget": {
+            "title": "Top 10 paesi per finanziamento stimato",
+            "note": "Milioni di euro; progetti multi-paese ripartiti in quote uguali",
+            "type": "bar", "horizontal": True, "unit": "eur",
+            "labels": [p for p, _ in top_paesi_budget], "values": [round(v, 1) for _, v in top_paesi_budget],
+            "slots": [3] * len(top_paesi_budget),
+        },
+        "direttrice_budget": {
+            "title": "Finanziamento per direttrice",
+            "note": "Milioni di euro, per direttrice principale",
+            "type": "bar", "horizontal": True, "unit": "eur",
+            "labels": [DIRETTRICE_SHORT.get(d, d) for d in dir_budget_labels], "full_labels": dir_budget_labels,
+            "values": [round(direttrice_budget[d], 1) for d in dir_budget_labels],
+            "slots": [DIRETTRICE_SLOT[d] for d in dir_budget_labels],
+        },
+        "top_progetti": {
+            "title": "I progetti più grandi per importo",
+            "note": "Milioni di euro",
+            "type": "bar", "horizontal": True, "unit": "eur",
+            "labels": [truncate(r["Nome Progetto"], 48) for r in top_progetti],
+            "full_labels": [r["Nome Progetto"] for r in top_progetti],
+            "values": [round(r["_importo"], 1) for r in top_progetti],
+            "slots": [DIRETTRICE_SLOT.get(primary(r), 1) for r in top_progetti],
+        },
+        "bucket_importo": {
+            "title": "Progetti per fascia di importo",
+            "note": "Milioni di euro",
+            "type": "bar", "horizontal": False, "unit": "progetti",
+            "labels": list(bucket_counts), "values": list(bucket_counts.values()),
+            "slots": [2] * len(bucket_counts),
+        },
+        "enti": {
+            "title": "Enti esecutori più ricorrenti",
+            "type": "bar", "horizontal": True, "unit": "progetti",
+            "labels": [truncate(short_ente(e), 48) for e, _ in top_enti],
+            "full_labels": [e for e, _ in top_enti],
+            "values": [n for _, n in top_enti],
+            "slots": [7] * len(top_enti),
+        },
+    }
+    summary = {
+        "n_progetti": len(rows),
+        "tot_eur": round(sum(r["_importo"] for r in eur_rows)),
+        "n_paesi": len(paesi),
+    }
+    return charts, summary
+
+
+WIDGET_CAROSELLI = {
+    "carosello-1.html": ["direttrice_count", "stato", "top_paesi", "top_paesi_budget"],
+    "carosello-2.html": ["direttrice_budget", "top_progetti", "bucket_importo", "enti"],
+}
+
+
+def write_widget(rows, dashboard_template, estratto_il):
+    WIDGET_DIR.mkdir(exist_ok=True)
+    charts, summary = widget_stats(rows)
+    logo = re.search(r"data:image/png;base64,[A-Za-z0-9+/=]+", dashboard_template).group(0)
+    data_it = "/".join(reversed(estratto_il.split(" ")[0].split("-")))
+    fmt_int = lambda n: f"{n:,}".replace(",", ".")
+
+    intro = (BASE / "widget_intro_template.html").read_text(encoding="utf-8")
+    intro = (intro.replace("__LOGO__", logo)
+                  .replace("__DASHBOARD_URL__", DASHBOARD_URL)
+                  .replace("__N_PROGETTI__", fmt_int(summary["n_progetti"]))
+                  .replace("__TOT_EUR__", fmt_int(summary["tot_eur"]))
+                  .replace("__N_PAESI__", fmt_int(summary["n_paesi"]))
+                  .replace("__AGGIORNATO_IL__", data_it))
+    (WIDGET_DIR / "intro.html").write_text(intro, encoding="utf-8")
+
+    carosello = (BASE / "widget_carosello_template.html").read_text(encoding="utf-8")
+    for i, (name, keys) in enumerate(WIDGET_CAROSELLI.items()):
+        html = (carosello.replace("__CHARTS_JSON__", json.dumps([charts[k] for k in keys], ensure_ascii=False))
+                         .replace("__DASHBOARD_URL__", DASHBOARD_URL)
+                         .replace("__AGGIORNATO_IL__", data_it)
+                         .replace("__START_OFFSET__", str(i)))
+        (WIDGET_DIR / name).write_text(html, encoding="utf-8")
+
+    # anteprima locale: lo snippet da incollare in WordPress, dentro una pagina finta
+    snippet = (BASE / "widget_snippet_wordpress.html").read_text(encoding="utf-8")
+    preview = ("<!DOCTYPE html>\n<html lang=\"it\"><head><meta charset=\"UTF-8\">"
+               "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+               "<title>Anteprima widget Piano Mattei</title>"
+               "<style>body{margin:0;background:#f4f4f4;font-family:'Noto Sans',Verdana,sans-serif}"
+               ".page{max-width:1140px;margin:0 auto;padding:40px 15px}"
+               ".fake{background:#ddd;height:160px;border-radius:4px;margin:24px 0;display:flex;"
+               "align-items:center;justify-content:center;color:#777}</style></head><body><div class=\"page\">"
+               "<div class=\"fake\">contenuto del sito</div>\n"
+               + snippet.replace(WIDGET_BASE_URL, "")
+               + "\n<div class=\"fake\">riquadro LinkedIn + newsletter</div></div></body></html>\n")
+    (WIDGET_DIR / "anteprima.html").write_text(preview, encoding="utf-8")
+    print(f"Widget scritto: {WIDGET_DIR}/ (intro.html, {', '.join(WIDGET_CAROSELLI)}, anteprima.html)")
+
+
 def main():
     payload = json.loads(DATA_JSON_PATH.read_text(encoding="utf-8"))
     projects = payload["progetti"]
@@ -174,6 +374,8 @@ def main():
     html = html.replace("__ESTRATTO_IL__", estratto_il)
     HTML_OUT_PATH.write_text(html, encoding="utf-8")
     print(f"Dashboard scritta: {HTML_OUT_PATH}")
+
+    write_widget(rows, template, estratto_il)
 
 
 if __name__ == "__main__":

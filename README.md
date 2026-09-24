@@ -12,8 +12,10 @@ I dati **non** sono un file statico curato a mano: vengono estratti direttamente
 | [`estrai_dati_mattei.py`](estrai_dati_mattei.py) | Script che scarica i dati aggiornati direttamente da governo.it e li normalizza in `dati_progetti_mattei.json`. |
 | [`genera_dashboard.py`](genera_dashboard.py) | Rigenera `index.html` (e il CSV) a partire da `dati_progetti_mattei.json`. |
 | [`dashboard_template.html`](dashboard_template.html) | Template HTML/CSS/JS della dashboard, usato da `genera_dashboard.py`. |
+| [`widget_intro_template.html`](widget_intro_template.html), [`widget_carosello_template.html`](widget_carosello_template.html) | Template delle pagine del widget da incorporare in siti terzi (vedi [Widget](#widget-da-incorporare)). |
+| [`widget_snippet_wordpress.html`](widget_snippet_wordpress.html) | Codice da incollare nel sito ospite (blocco "HTML personalizzato" di WordPress). |
 
-I file generati dalla pipeline — `dati_progetti_mattei.json`, `progetti_piano_mattei_aggiornato.csv` e `index.html` — non sono versionati: vengono ricreati da zero ad ogni esecuzione degli script e ad ogni deploy.
+I file generati dalla pipeline — `dati_progetti_mattei.json`, `progetti_piano_mattei_aggiornato.csv`, `index.html` e la cartella `widget/` — non sono versionati: vengono ricreati da zero ad ogni esecuzione degli script e ad ogni deploy.
 
 ## Dashboard
 
@@ -28,6 +30,25 @@ Apri [gnucoop.github.io/dashboard-dati-piano-mattei](https://gnucoop.github.io/d
 - Tema chiaro/scuro (automatico in base al sistema, con toggle manuale).
 
 Le note metodologiche complete (unità di misura, criteri di attribuzione multi-direttrice/multi-paese, casi esclusi) sono in fondo alla pagina stessa.
+
+## Widget da incorporare
+
+Una barra orizzontale a sfondo nero, pensata per essere inserita in siti terzi (es. [info-cooperazione.it](https://www.info-cooperazione.it/)), composta da 3 iframe affiancati (impilati su mobile):
+
+1. `widget/intro.html` — breve presentazione della dashboard, con i numeri chiave e il logo Gnucoop;
+2. `widget/carosello-1.html` — carosello automatico: progetti per direttrice, per stato, top 10 paesi per numero e per finanziamento;
+3. `widget/carosello-2.html` — carosello automatico: finanziamento per direttrice, progetti più grandi, fasce di importo, enti esecutori.
+
+Le pagine sono generate da `genera_dashboard.py` insieme alla dashboard e pubblicate su GitHub Pages sotto `/widget/`, quindi si aggiornano ogni giorno con i dati. Per non caricare l'intero dataset in ogni iframe, le statistiche del widget sono calcolate in Python (`widget_stats()`), replicando la logica di `computeStats()` del template della dashboard: se si modifica una delle due, va allineata anche l'altra.
+
+I caroselli cambiano grafico ogni 7 secondi (sfasati tra loro), si fermano quando il mouse o il focus è sopra o quando la barra è fuori schermo, supportano lo swipe su mobile e rispettano `prefers-reduced-motion`. Un clic su un grafico apre la dashboard completa in una nuova scheda.
+
+Per inserirlo, incollare il contenuto di [`widget_snippet_wordpress.html`](widget_snippet_wordpress.html) in un blocco "HTML personalizzato". Per vederlo in locale:
+
+```bash
+python3 genera_dashboard.py
+python3 -m http.server 8000     # poi aprire http://localhost:8000/widget/anteprima.html
+```
 
 ## Come funziona la pipeline dati
 

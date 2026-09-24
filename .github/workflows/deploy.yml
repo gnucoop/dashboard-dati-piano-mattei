@@ -36,13 +36,14 @@ jobs:
       - name: Estrai i dati aggiornati dal sito del governo
         run: python estrai_dati_mattei.py
 
-      - name: Genera index.html
+      - name: Genera index.html e widget
         run: python genera_dashboard.py
 
       - name: Prepara la cartella da pubblicare
         run: |
           mkdir -p dist
           cp index.html dist/
+          cp -r widget dist/
 
       - name: Carica artefatto per GitHub Pages
         uses: actions/upload-pages-artifact@v3

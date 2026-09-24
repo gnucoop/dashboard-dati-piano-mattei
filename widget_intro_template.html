@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dati Piano Mattei</title>
+<base target="_blank">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:             #000000;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted:          #898781;
+    --rule:           #2c2c2a;
+    --accent:         #3987e5;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14px;
+    padding: 20px 22px;
+    overflow: hidden;
+  }
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .kicker {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .logo {
+    display: inline-flex;
+    background: #ffffff;
+    border-radius: 5px;
+    padding: 3px 7px;
+    line-height: 0;
+  }
+  .logo img { height: 18px; width: auto; }
+  h1 {
+    margin: 0;
+    font-size: 1.45rem;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    line-height: 1.5;
+  }
+  p b { color: var(--text-primary); font-weight: 600; }
+  .stats {
+    display: flex;
+    gap: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+  }
+  .stats div { display: flex; flex-direction: column; }
+  .stats .v {
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .stats .l { font-size: 0.7rem; color: var(--muted); }
+  a.cta {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 6px;
+  }
+  a.cta:hover, a.cta:focus-visible { background: #2a78d6; }
+  a.cta:focus-visible, .logo:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <span class="kicker">Open data · Cooperazione</span>
+    <a class="logo" href="https://www.gnucoop.com" rel="noopener" aria-label="Gnucoop"><img src="__LOGO__" alt="Gnucoop"></a>
+  </div>
+  <h1>Dati Piano Mattei</h1>
+  <p>Una dashboard aperta sui progetti di cooperazione che l'Italia finanzia in Africa con il Piano Mattei: settori, paesi, importi e stato di avanzamento. I dati arrivano dal sito del Governo e si aggiornano ogni giorno. La dashboard è realizzata da <b>Gnucoop</b>.</p>
+  <div class="stats" aria-label="Dati aggiornati al __AGGIORNATO_IL__">
+    <div><span class="v">__N_PROGETTI__</span><span class="l">progetti</span></div>
+    <div><span class="v">€ __TOT_EUR__ M</span><span class="l">finanziamenti</span></div>
+    <div><span class="v">__N_PAESI__</span><span class="l">paesi africani</span></div>
+  </div>
+  <a class="cta" href="__DASHBOARD_URL__" rel="noopener">Esplora la dashboard <span aria-hidden="true">→</span></a>
+</body>
+</html>
