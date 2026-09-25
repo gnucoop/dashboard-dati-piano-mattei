@@ -33,7 +33,7 @@ Le note metodologiche complete (unità di misura, criteri di attribuzione multi-
 
 ## Widget da incorporare
 
-Una barra orizzontale a sfondo nero, pensata per essere inserita in siti terzi (es. [info-cooperazione.it](https://www.info-cooperazione.it/)), composta da 3 iframe affiancati (impilati su mobile):
+Una barra orizzontale a sfondo nero, pensata per essere inserita in siti terzi, composta da 3 iframe affiancati (impilati su mobile):
 
 1. `widget/intro.html` — breve presentazione della dashboard, con i numeri chiave e il logo Gnucoop;
 2. `widget/carosello-1.html` — carosello automatico: progetti per direttrice, per stato, top 10 paesi per numero e per finanziamento;
